@@ -126,8 +126,12 @@ func (c *Client) RoundTrip(in, out Message) error {
 	respBodyString := resBodyBuf.String()
 
 	// extract SOAP envelope from HTTP response body
-	soapEnvelopeRegEx := regexp.MustCompile("<s:Envelope.*s:Envelope>")
+	soapEnvelopeRegEx := regexp.MustCompile("(?s)<\\w+:Envelope.*</\\w+:Envelope>")
 	soapEnvelopeMatches := soapEnvelopeRegEx.FindAllStringSubmatch(respBodyString, -1)
+	if len(soapEnvelopeMatches)==0 {
+		return fmt.Errorf("Failed to extract envelope from SOAP message:" + respBodyString)
+	}
+
 	// there should be only one soap envelop in the HTTP response body
 	extractedSOAPEnvelope := soapEnvelopeMatches[0][0]
 	if c.Debug {
@@ -163,5 +167,5 @@ type Body struct {
 // EnvelopeHeader is the header of a SOAP envelope.
 type EnvelopeHeader struct {
 	XMLName    xml.Name `xml:"SOAP-ENV:Header"`
-	SOAPAction string `xml:"http://www.w3.org/2005/08/addressing Action"`
+	SOAPAction string   `xml:"http://www.w3.org/2005/08/addressing Action"`
 }
